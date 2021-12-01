@@ -1,8 +1,12 @@
 import { readInputFileLines } from '../../util'
 
-function parseLine(line: string) {
-  return line
+const inputs = readInputFileLines(__dirname, l => parseInt(l))
+let lastInput = Number.POSITIVE_INFINITY
+let increases = 0
+
+for (const input of inputs) {
+  if (input > lastInput) increases++
+  lastInput = input
 }
 
-const inputs = readInputFileLines(__dirname, parseLine)
-console.log(inputs)
+console.log(increases)
