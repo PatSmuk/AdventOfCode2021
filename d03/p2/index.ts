@@ -15,7 +15,7 @@ for (let i = 0; i < numbers[0].length && numbers.length > 1; i++) {
     if (line[i] === '0') zeros++
   }
 
-  // Check if zeros are more common
+  // Check if zeros are more common, defaulting to '1' if they are tied
   const wanted = (zeros > numbers.length / 2) ? '0' : '1'
   numbers = numbers.filter(n => n[i] === wanted)
 }
@@ -30,7 +30,7 @@ for (let i = 0; i < numbers[0].length && numbers.length > 1; i++) {
     if (line[i] === '0') zeros++
   }
 
-  // Check if zeros are more common
+  // Check if zeros are more common, defaulting to '0' if they are tied
   const wanted = (zeros > numbers.length / 2) ? '1' : '0'
   numbers = numbers.filter(n => n[i] === wanted)
 }
