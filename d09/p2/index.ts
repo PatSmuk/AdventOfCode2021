@@ -6,17 +6,29 @@ function parseLine(line: string) {
 
 const heightMap = readInputFileLines(__dirname, parseLine)
 
+function getNeighbours(r: number, c: number) {
+  const neighbours = [] as [number, number, number][]
+  if (r > 0) {
+    neighbours.push([heightMap[r - 1][c], r - 1, c])
+  }
+  if (r < (heightMap.length - 1)) {
+    neighbours.push([heightMap[r + 1][c], r + 1, c])
+  }
+  if (c > 0) {
+    neighbours.push([heightMap[r][c - 1], r, c - 1])
+  }
+  if (c < (heightMap[0].length - 1)) {
+    neighbours.push([heightMap[r][c + 1], r, c + 1])
+  }
+  return neighbours
+}
+
 function measureBasin(r: number, c: number): number {
   let basinSize = 1
   // Keep track of locations we already visited so we don't visit them twice.
   const alreadyVisited = new Set<string>([`${r},${c}`])
   // Keep track of locations to explore, initialized to neighbours around (r, c).
-  const frontier: [number | undefined, number, number][] = [
-    [heightMap[r][c - 1], r, c - 1],
-    [heightMap[r][c + 1], r, c + 1],
-    [heightMap[r - 1] ? heightMap[r - 1][c] : undefined, r - 1, c],
-    [heightMap[r + 1] ? heightMap[r + 1][c] : undefined, r + 1, c]
-  ]
+  const frontier: [number | undefined, number, number][] = getNeighbours(r, c)
 
   // While there is still locations to explore in the frontier...
   while (frontier.length > 0) {
@@ -34,10 +46,7 @@ function measureBasin(r: number, c: number): number {
     basinSize++
 
     // Add all its neighbours to the frontier.
-    frontier.push([heightMap[r][c - 1], r, c - 1])
-    frontier.push([heightMap[r][c + 1], r, c + 1])
-    frontier.push([heightMap[r - 1] ? heightMap[r - 1][c] : undefined, r - 1, c])
-    frontier.push([heightMap[r + 1] ? heightMap[r + 1][c] : undefined, r + 1, c])
+    frontier.push(...getNeighbours(r, c))
   }
 
   return basinSize
@@ -45,20 +54,13 @@ function measureBasin(r: number, c: number): number {
 
 const basins: number[] = []
 for (let i = 0; i < heightMap.length; i++) {
-  const prevRow = heightMap[i - 1]
-  const row = heightMap[i]
-  const nextRow = heightMap[i + 1]
-
-  for (let j = 0; j < row.length; j++) {
-    const value = row[j]
+  for (let j = 0; j < heightMap[i].length; j++) {
+    const value = heightMap[i][j]
 
     // Determine if value is a local minima.
-    if (prevRow && prevRow[j] <= value) continue
-    if (nextRow && nextRow[j] <= value) continue
-    if (row[j - 1] !== undefined && row[j - 1] <= value) continue
-    if (row[j + 1] !== undefined && row[j + 1] <= value) continue
-
-    basins.push(measureBasin(i, j))
+    if (getNeighbours(i, j).every(([h]) => h > value)) {
+      basins.push(measureBasin(i, j))
+    }
   }
 }
 
