@@ -28,7 +28,7 @@ function measureBasin(r: number, c: number): number {
   // Keep track of locations we already visited so we don't visit them twice.
   const alreadyVisited = new Set<string>([`${r},${c}`])
   // Keep track of locations to explore, initialized to neighbours around (r, c).
-  const frontier: [number | undefined, number, number][] = getNeighbours(r, c)
+  const frontier: [number, number, number][] = getNeighbours(r, c)
 
   // While there is still locations to explore in the frontier...
   while (frontier.length > 0) {
@@ -40,7 +40,7 @@ function measureBasin(r: number, c: number): number {
     alreadyVisited.add(`${r},${c}`)
 
     // If it's off the grid or the max height, skip it.
-    if (value === undefined || value === 9) continue
+    if (value === 9) continue
 
     // Add it to the basin.
     basinSize++
