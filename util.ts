@@ -9,3 +9,13 @@ export function readInputFileLines<T>(dirname: string, parser: (line: string, i:
 
     return data.map(parser)
 }
+
+/** Increments the value associated with `key` in `map` by `value`. */
+export function mapInc<K>(map: Map<K, number>, key: K, value: number) {
+  const existing = map.get(key)
+  if (existing) {
+    map.set(key, existing + value)
+  } else {
+    map.set(key, value)
+  }
+}
