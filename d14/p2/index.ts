@@ -1,4 +1,5 @@
 import { readInputFileLines, mapInc } from '../../util'
+import * as it from 'iter-tools'
 
 const STEPS = 40
 
@@ -15,20 +16,15 @@ const inputs = readInputFileLines(__dirname, parseLine).filter(x => !!x) as stri
 
 let polymer = new Map<string, number>()
 const startPolymer = inputs[0]
-for (let i = 0; i < startPolymer.length - 1; i++) {
-  const pair = startPolymer[i + 0] + startPolymer[i + 1]
-  mapInc(polymer, pair, 1)
+for (const [a, b] of it.window(2, startPolymer)) {
+  mapInc(polymer, a + b, 1)
 }
 
 // Create map from pairs of chars to the one to insert in between.
-const insertedCharByPair = new Map<string, string>()
-for (let i = 1; i < inputs.length; i++) {
-  const [pair, inserted] = inputs[i]
-  insertedCharByPair.set(pair, inserted)
-}
+const insertedCharByPair = new Map<string, string>(inputs.slice(1) as [string, string][])
 
 // For each step...
-for (let step = 1; step <= STEPS; step++) {
+for (const _ of it.range(STEPS)) {
   const newPolymer = new Map()
 
   for (const [pair, count] of polymer) {
@@ -48,11 +44,6 @@ for (const [pair, count] of polymer) {
 }
 
 // Find the most and least common letters.
-let most = Number.NEGATIVE_INFINITY
-let least = Number.POSITIVE_INFINITY
-for (const value of letterCount.values()) {
-  if (value > most) most = value
-  if (value < least) least = value
-}
-
+const most = Math.max(...letterCount.values())
+const least = Math.min(...letterCount.values())
 console.log(most - least)
