@@ -1,8 +1,18 @@
 import { readInputFileLines } from '../../util'
+import { Pair, calculateMagnitude, reducePair } from '../util'
 
-function parseLine(line: string) {
-  return line
+function parseLine(line: string): Pair {
+  return JSON.parse(line)
 }
 
-const inputs = readInputFileLines(__dirname, parseLine)
-console.log(inputs)
+const numbers = readInputFileLines(__dirname, parseLine)
+
+let pair: Pair = [numbers[0], numbers[1]]
+reducePair(pair)
+
+for (const number of numbers.slice(2)) {
+  pair = [pair, number]
+  reducePair(pair)
+}
+
+console.log(calculateMagnitude(pair))
