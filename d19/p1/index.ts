@@ -1,5 +1,5 @@
 import { readInputFileLines } from '../../util'
-import { Operation, findConnectionsBetweenBeaconSets } from '../util'
+import { findConnectionsBetweenBeaconSets } from '../util'
 import * as math from 'mathjs'
 
 function parseLine(line: string) {
@@ -31,10 +31,10 @@ const connectionsBySet = findConnectionsBetweenBeaconSets(beaconSets)
 const allBeacons = new Set<string>(beaconSets[0].map(v => `${v[0]},${v[1]},${v[2]}`))
 const visitedSets = new Set<number>([0])
 // List of sets to visit and the list of operations to get from that set to set 0.
-const toVisit: [number, Operation[]][] = [...connectionsBySet.get(0)!].map(([k, v]) => [k, [v]])
+const toVisit: [number, math.Matrix][] = [...connectionsBySet.get(0)!]
 
 while (toVisit.length > 0) {
-  const [setId, ops] = toVisit.shift()!
+  const [setId, transform] = toVisit.shift()!
 
   if (visitedSets.has(setId)) {
     continue
@@ -45,23 +45,13 @@ while (toVisit.length > 0) {
 
   for (const v of set) {
     // Apply operations to v to transform it into set 0's space.
-    let v0 = math.matrix(v)
-    for (const [rot, trans, reverse] of ops) {
-      if (reverse) {
-        // If applying the transformation in reverse, subtract the translation vector first, then apply the inverse rotation.
-        v0 = math.multiply(math.subtract(v0, trans), math.transpose(rot)) as math.Matrix
-      } else {
-        // Otherwise apply the rotation first and then translate.
-        v0 = math.add(math.multiply(v0, rot), trans) as math.Matrix
-      }
-    }
-
+    const v0 = math.multiply(math.matrix([v[0], v[1], v[2], 1]), transform)
     allBeacons.add(`${v0.get([0])},${v0.get([1])},${v0.get([2])}`)
   }
 
   // Visit any sets connected to this one, adding the operation to get there to the front of ops.
-  for (const [nextSetId, op] of connectionsBySet.get(setId)!) {
-    toVisit.push([nextSetId, [op, ...ops]])
+  for (const [nextSetId, nextTransform] of connectionsBySet.get(setId)!) {
+    toVisit.push([nextSetId, math.multiply(nextTransform, transform)])
   }
 }
 

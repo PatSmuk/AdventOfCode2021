@@ -55,11 +55,9 @@ const rotations: math.Matrix[] = rotationSets.map(s => {
   return s.reduce((prev, curr) => math.multiply(curr, prev) as math.Matrix, math.identity(3, 3)) as math.Matrix
 })
 
-type RotAndTrans = [/* rotation matrix */math.Matrix, /* translation vector */number[]]
-export type Operation = [...RotAndTrans, /* reverse? */boolean]
+export function findConnectionsBetweenBeaconSets(beaconSets: number[][][]): Map<number, Map<number, math.Matrix>> {
+  const connectionsBySet = new Map<number, Map<number, math.Matrix>>(beaconSets.map((_, i) => [i, new Map()]))
 
-export function findConnectionsBetweenBeaconSets(beaconSets: number[][][]): Map<number, Map<number, Operation>> {
-  const connectionsBySet = new Map<number, Map<number, Operation>>(beaconSets.map((_, i) => [i, new Map()]))
   for (let i = 0; i < beaconSets.length - 1; i++) {
     for (let j = i + 1; j < beaconSets.length; j++) {
       const result = findConnection(beaconSets[i], beaconSets[j])
@@ -68,10 +66,10 @@ export function findConnectionsBetweenBeaconSets(beaconSets: number[][][]): Map<
       //   B to A as a reverse connection.
       if (result) {
         if (!connectionsBySet.get(i)!.get(j)) {
-          connectionsBySet.get(i)!.set(j, [...result, false])
+          connectionsBySet.get(i)!.set(j, result[0])
         }
         if (!connectionsBySet.get(j)!.get(i)) {
-          connectionsBySet.get(j)!.set(i, [...result, true])
+          connectionsBySet.get(j)!.set(i, result[1])
         }
       }
     }
@@ -80,7 +78,7 @@ export function findConnectionsBetweenBeaconSets(beaconSets: number[][][]): Map<
   return connectionsBySet
 }
 
-function findConnection(setA: number[][], setB: number[][]): RotAndTrans | undefined {
+function findConnection(setA: number[][], setB: number[][]): [math.Matrix, math.Matrix] | undefined {
   for (const rotation of rotations) {
     // Apply a rotation to set B.
     const rotatedSetB = []
@@ -94,18 +92,27 @@ function findConnection(setA: number[][], setB: number[][]): RotAndTrans | undef
     const deltas = new Map<string, number>()
     for (const pointA of setA) {
       for (const pointB of rotatedSetB) {
-        const delta = [
-          pointA[0] - pointB.get([0]),
-          pointA[1] - pointB.get([1]),
-          pointA[2] - pointB.get([2])
-        ]
-        const key = `${delta[0]},${delta[1]},${delta[2]}`
+        const delta = math.subtract(math.matrix(pointA), pointB) as math.Matrix
+        const key = `${delta.get([0])},${delta.get([1])},${delta.get([2])}`
         const prev = deltas.get(key) || 0
 
         // If this is the 12th point with the same delta, we found a connection!
-        // Return the rotation and translation to get from A to B.
         if (prev === 11) {
-          return [rotation, delta]
+          // Create augmented matrices to transform from sensor B's space to A's and vice-versa.
+          const bToA = math.clone(rotation)
+          const aToB = math.transpose(rotation)
+
+          // Set the translation vectors.
+          bToA.subset(math.index(3, [0, 1, 2]), delta)
+          // For the inverse the translation vector needs to be rotated and inverted.
+          // See: http://negativeprobability.blogspot.com/2011/11/affine-transformations-and-their.html
+          const inverseDelta = math.multiply(-1, math.multiply(delta, aToB))
+          aToB.subset(math.index(3, [0, 1, 2]), inverseDelta)
+
+          bToA.set([3, 3], 1)
+          aToB.set([3, 3], 1)
+
+          return [bToA, aToB]
         }
 
         deltas.set(key, prev + 1)
