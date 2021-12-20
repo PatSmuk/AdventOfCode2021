@@ -1,4 +1,5 @@
 import * as math from 'mathjs'
+type Matrix = math.Matrix
 
 // Rotations about each axis.
 const rX = math.matrix([
@@ -24,7 +25,7 @@ const rZR = math.transpose(rZ)
 
 // Every possible orientation.
 const rotationSets = [
-  [math.identity(3, 3)],
+  [math.identity(3, 3) as Matrix],
   [rX],
   [rX, rX],
   [rXR],
@@ -51,12 +52,17 @@ const rotationSets = [
 ]
 
 // Create rotations by multiplying the matrices together.
-const rotations: math.Matrix[] = rotationSets.map(s => {
-  return s.reduce((prev, curr) => math.multiply(curr, prev) as math.Matrix, math.identity(3, 3)) as math.Matrix
+const rotations = rotationSets.map(s => {
+  return s.reduce(
+    (prev, curr) => math.multiply(curr, prev),
+    math.identity(3, 3) as Matrix
+  )
 })
 
-export function findConnectionsBetweenBeaconSets(beaconSets: number[][][]): Map<number, Map<number, math.Matrix>> {
-  const connectionsBySet = new Map<number, Map<number, math.Matrix>>(beaconSets.map((_, i) => [i, new Map()]))
+export function findConnectionsBetweenBeaconSets(beaconSets: number[][][]): Map<number, Map<number, Matrix>> {
+  const connectionsBySet = new Map<number, Map<number, Matrix>>(
+    beaconSets.map((_, i) => [i, new Map()])
+  )
 
   for (let i = 0; i < beaconSets.length - 1; i++) {
     for (let j = i + 1; j < beaconSets.length; j++) {
@@ -65,12 +71,8 @@ export function findConnectionsBetweenBeaconSets(beaconSets: number[][][]): Map<
       // If a connection was found, add A to B as a forward connection and
       //   B to A as a reverse connection.
       if (result) {
-        if (!connectionsBySet.get(i)!.get(j)) {
-          connectionsBySet.get(i)!.set(j, result[0])
-        }
-        if (!connectionsBySet.get(j)!.get(i)) {
-          connectionsBySet.get(j)!.set(i, result[1])
-        }
+        connectionsBySet.get(i)!.set(j, result[0])
+        connectionsBySet.get(j)!.set(i, result[1])
       }
     }
   }
@@ -78,12 +80,12 @@ export function findConnectionsBetweenBeaconSets(beaconSets: number[][][]): Map<
   return connectionsBySet
 }
 
-function findConnection(setA: number[][], setB: number[][]): [math.Matrix, math.Matrix] | undefined {
+function findConnection(setA: number[][], setB: number[][]): [Matrix, Matrix] | undefined {
   for (const rotation of rotations) {
     // Apply a rotation to set B.
     const rotatedSetB = []
     for (let i = 0; i < setB.length; i++) {
-      rotatedSetB.push(math.multiply(setB[i], rotation) as any as math.Matrix)
+      rotatedSetB.push(math.multiply(setB[i], rotation) as any as Matrix)
     }
 
     // Calculate deltas between each point of A and rotated B.
@@ -92,7 +94,7 @@ function findConnection(setA: number[][], setB: number[][]): [math.Matrix, math.
     const deltas = new Map<string, number>()
     for (const pointA of setA) {
       for (const pointB of rotatedSetB) {
-        const delta = math.subtract(math.matrix(pointA), pointB) as math.Matrix
+        const delta = math.subtract(math.matrix(pointA), pointB) as Matrix
         const key = `${delta.get([0])},${delta.get([1])},${delta.get([2])}`
         const prev = deltas.get(key) || 0
 
